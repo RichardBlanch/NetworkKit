@@ -6,7 +6,7 @@
 import Combine
 import Foundation
 
-extension URLSession {
+public extension URLSession {
     func publisher<Request: APIRequest>(for request: Request, frequency: PollingFrequency = .once, decoder: JSONDecoder) -> APIRequestPublisher<Request> {
         APIRequestPublisher(request: request, frequency: frequency, decoder: decoder, urlSession: self)
     }
