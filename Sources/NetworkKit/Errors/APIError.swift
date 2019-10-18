@@ -126,7 +126,7 @@ private extension APIError {
     }
 }
 
-extension Error {
+public extension Error {
     func mapToAPIError() -> APIError {
         APIError.convert(error: self)
     }
