@@ -131,6 +131,10 @@ public extension Error {
         APIError.convert(error: self)
     }
     
+    func mapToAPIErrorResult<T>() -> Result<T,APIError> {
+        mapToAPIError().convertToResult()
+    }
+    
     func convertToAPIErrorPublisher<T>() -> Just<Result<T, APIError>> {
         mapToAPIError().convertToResultPublisher()
     }

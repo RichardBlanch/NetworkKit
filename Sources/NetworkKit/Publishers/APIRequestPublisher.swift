@@ -14,7 +14,7 @@ public struct APIRequestPublisher<Request: APIRequest>: Publisher {
     // MARK: - Types
     
     public typealias Output = Result<Request.Output, APIError>
-    public typealias Failure = Error
+    public typealias Failure = Never
     
     private let request: Request
     private let frequency: PollingFrequency
@@ -25,7 +25,8 @@ public struct APIRequestPublisher<Request: APIRequest>: Publisher {
          frequency: PollingFrequency,
          decoder: JSONDecoder,
          urlSession: URLSession = URLSession.shared
-    ) {
+    )
+    {
         self.request = request
         self.frequency = frequency
         self.decoder = decoder
@@ -42,7 +43,7 @@ public struct APIRequestPublisher<Request: APIRequest>: Publisher {
             subscriber.receive(subscription: subscription)
             
         } catch {
-            subscriber.receive(completion: .failure(error))
+            _ = subscriber.receive(error.mapToAPIErrorResult())
         }
     }
 }

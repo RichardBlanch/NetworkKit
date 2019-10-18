@@ -9,7 +9,7 @@
 import Combine
 import Foundation
 
-final  class APIRequestSubscription<S: Subscriber, Request: APIRequest> where S.Input == Result<Request.Output, APIError>, S.Failure == Error {
+final  class APIRequestSubscription<S: Subscriber, Request: APIRequest> where S.Input == Result<Request.Output, APIError>, S.Failure == Never {
     private var subscriber: S?
     private let request: Request
     private let frequency: PollingFrequency
@@ -30,7 +30,7 @@ final  class APIRequestSubscription<S: Subscriber, Request: APIRequest> where S.
     
     private var subscriptions: Set<AnyCancellable> = []
 
-    init(subscriber: S,
+    init (subscriber: S,
          request: Request,
          frequency: PollingFrequency,
          decoder: JSONDecoder,
@@ -45,7 +45,7 @@ final  class APIRequestSubscription<S: Subscriber, Request: APIRequest> where S.
         do {
             try setUpSubscription()
         } catch {
-            subscriber.receive(completion: .failure(error))
+            throw error
         }
     }
     
@@ -91,7 +91,7 @@ final  class APIRequestSubscription<S: Subscriber, Request: APIRequest> where S.
         .store(in: &subscriptions)
     }
     
-    private func finish(with completion: Subscribers.Completion<Error>) {
+    private func finish(with completion: Subscribers.Completion<Never>) {
         subscriber?.receive(completion: completion)
     }
     

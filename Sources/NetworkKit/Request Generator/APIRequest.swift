@@ -84,7 +84,7 @@ public extension APIRequest {
         return urlRequest
     }
     
-    func convertToPublisher(using urlSession: URLSession = URLSession.shared, frequency: PollingFrequency = .once, decoder: JSONDecoder) -> APIRequestPublisher<Self> {
-        return urlSession.publisher(for: self, frequency: frequency, decoder: decoder)
+    func convertToPublisher(using urlSession: URLSession = URLSession.shared, frequency: PollingFrequency = .once, decoder: JSONDecoder) -> AnyPublisher<Result<Self.Output, APIError>, Never> {
+        return urlSession.publisher(for: self, frequency: frequency, decoder: decoder).eraseToAnyPublisher()
     }
 }
