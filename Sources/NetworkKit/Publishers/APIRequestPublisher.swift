@@ -20,17 +20,20 @@ public struct APIRequestPublisher<Request: APIRequest>: Publisher {
     private let frequency: PollingFrequency
     private let decoder: JSONDecoder
     private unowned let urlSession: URLSession
+    private let doesBreakpointOnError: Bool
     
     init(request: Request,
          frequency: PollingFrequency,
          decoder: JSONDecoder,
-         urlSession: URLSession = URLSession.shared
+         urlSession: URLSession = URLSession.shared,
+         doesBreakpointOnError: Bool
     )
     {
         self.request = request
         self.frequency = frequency
         self.decoder = decoder
         self.urlSession = urlSession
+        self.doesBreakpointOnError = doesBreakpointOnError
     }
     
     public func receive<S>(subscriber: S) where S : Subscriber, APIRequestPublisher.Failure == S.Failure, APIRequestPublisher.Output == S.Input {
@@ -39,7 +42,8 @@ public struct APIRequestPublisher<Request: APIRequest>: Publisher {
                                                                       request: request,
                                                                       frequency: frequency,
                                                                       decoder: decoder,
-                                                                      urlSession: urlSession)
+                                                                      urlSession: urlSession,
+                                                                      doesBreakpointOnError: doesBreakpointOnError)
             subscriber.receive(subscription: subscription)
             
         } catch {

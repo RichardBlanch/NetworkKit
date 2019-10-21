@@ -15,6 +15,7 @@ final  class APIRequestSubscription<S: Subscriber, Request: APIRequest> where S.
     private let frequency: PollingFrequency
     private let decoder: JSONDecoder
     private unowned let urlSession: URLSession
+    private let doesBreakpointOnError: Bool
 
     private let dispatchQueue = DispatchQueue(label: "com.APIRequestSubscription")
     private var _count: Int = Int.max
@@ -34,13 +35,15 @@ final  class APIRequestSubscription<S: Subscriber, Request: APIRequest> where S.
          request: Request,
          frequency: PollingFrequency,
          decoder: JSONDecoder,
-         urlSession: URLSession
+         urlSession: URLSession,
+         doesBreakpointOnError: Bool
     ) throws {
         self.subscriber = subscriber
         self.request = request
         self.frequency = frequency
         self.decoder = decoder
         self.urlSession = urlSession
+        self.doesBreakpointOnError = doesBreakpointOnError
         
         do {
             try setUpSubscription()
@@ -61,6 +64,7 @@ final  class APIRequestSubscription<S: Subscriber, Request: APIRequest> where S.
             publisher = try continuousPollingPublisher(at: interval)
             isOneTimePublisher = false
         }
+        
         
         publisher.sink(receiveCompletion: { [weak self] (completion) in
             switch completion {
@@ -97,21 +101,23 @@ final  class APIRequestSubscription<S: Subscriber, Request: APIRequest> where S.
     
     private func oneTimePublisher() throws -> AnyPublisher<Result<Request.Output, APIError>, Never> {
         let urlRequest = try request.makeRequest()
-        return urlSession.decodableTypePublisher(for: urlRequest).eraseToAnyPublisher()
+        return urlSession.decodableTypePublisher(for: urlRequest, doesBreakpointOnError: doesBreakpointOnError).eraseToAnyPublisher()
     }
     
     private func continuousPollingPublisher(at interval: TimeInterval) throws -> AnyPublisher<Result<Request.Output, APIError>, Never> {
         let urlRequest = try request.makeRequest()
         
         // Will create our initial fetch
-        let decodableTypePublisher: AnyPublisher<Result<Request.Output, APIError>, Never> = urlSession.decodableTypePublisher(for: urlRequest)
+        let decodableTypePublisher: AnyPublisher<Result<Request.Output, APIError>, Never> = urlSession.decodableTypePublisher(for: urlRequest, doesBreakpointOnError: doesBreakpointOnError)
             .eraseToAnyPublisher()
         
         // Will fetch request every X seconds where X == interval
         let pollingPublisher = Timer.publish(every: interval, on: RunLoop.main, in: .common)
         .autoconnect()
-            .flatMap { _ -> AnyPublisher<Result<Request.Output, APIError>, Never> in
-            self.urlSession.decodableTypePublisher(for: urlRequest)
+            .flatMap { [weak self] _ -> AnyPublisher<Result<Request.Output, APIError>, Never> in
+                guard let self = self else { return APIError.unknown.convertToResultPublisher().eraseToAnyPublisher() }
+    
+                return self.urlSession.decodableTypePublisher(for: urlRequest, doesBreakpointOnError: self.doesBreakpointOnError)
         }
         .eraseToAnyPublisher()
         
