@@ -20,7 +20,10 @@ public extension URLSession {
             .breakpoint(receiveOutput: { (result) -> Bool in
                 switch result {
                 case .success: return false
-                case .failure: return true && doesBreakpointOnError
+                case .failure(let error):
+                    print("NETWORK KIT - EXECUTION STOPPED. TO TURN OFF - PASS IN doesBreakpointOnError: false")
+                    error.printError(at: urlRequest.url)
+                    return true && doesBreakpointOnError
                 }
             })
             .eraseToAnyPublisher()
